@@ -9,7 +9,7 @@ The TZXDuino is an open-source device used to play digital recordings of cassett
 
 ## Firmware
 
-The TZXduini-mini is firmware compatible with earlier versions of the TZXduino. There are many forks of the TZXduino firmware. I used the one from arduitape.blogspot.com. There are also forks of the firmware on GitHub. Choose whichever one you like.
+The TZXduini-mini firmware is a fork of the open source TZXduino firmware.
 
 ## Contributors
 
