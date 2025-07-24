@@ -6,7 +6,7 @@
 //=========================================================================
 
 #define VERSION "TZX-Mini 1.17a"
-#define DATE    "Jul-17-2025"
+#define DATE    "Jul-23-2025"
 
 // ========================================================================
 //
@@ -310,7 +310,7 @@ void playFile() {
       scrollText(fileName);
       currpct=0;
       timeCount=0;
-      timeDiff2 = millis ();        // reset millisecond count
+      timeDiff2 = millis();         // reset millisecond count
       TZXPlay(sfileName);           // load using the short filename
       start=1;
       if (PauseAtStart == true) {

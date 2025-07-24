@@ -149,12 +149,12 @@ void menuMode() {
           while (STOP_NOT_PRESSED || lastbtn) {
             if (updateScreen) {
               printtextF(PSTR("Turbo Boost"),0);
-              printOnOff(uefTurboMode);
+              printOnOff(TurboMode);
               updateScreen=false;
             }
             if (PLAY_PRESSED && !lastbtn) {
-              if (uefTurboMode==1) uefTurboMode=0;
-              else uefTurboMode=1;
+              if (TurboMode) TurboMode=0;
+              else TurboMode=1;
               lastbtn=true;
               updateScreen=true;
             }
@@ -230,7 +230,7 @@ void menuMode() {
 
 void updateEEPROM() {
   byte settings = baudRate;
-  if (uefTurboMode) settings |= TURBO_BIT;
+  if (TurboMode)    settings |= TURBO_BIT;
   if (FlipPolarity) settings |= POLAR_BIT;
   if (PauseAtStart) settings |= PAUSE_BIT;
   EEPROM.put(0,settings);
@@ -239,8 +239,8 @@ void updateEEPROM() {
 void loadEEPROM() {
   byte settings=0;
   EEPROM.get(0,settings);
-  if (settings & TURBO_BIT) uefTurboMode = 1;
-  else uefTurboMode = 0;
+  if (settings & TURBO_BIT) TurboMode = 1;
+  else TurboMode = 0;
   if (settings & POLAR_BIT) FlipPolarity = 1;
   else FlipPolarity = 0;
   if (settings & PAUSE_BIT) PauseAtStart = 1;

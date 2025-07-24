@@ -172,7 +172,7 @@ void OricBitWrite () {
     // currentPeriod = ORICZEROPULSE;
     if (pass == 0) currentPeriod = ORICZEROLOWPULSE;
     if (pass == 1) currentPeriod = ORICZEROHIGHPULSE;
-  } else if (currentBit == 2) {   // paridad inversa i.e. Impar
+  } else if (currentBit == 2) {   // inverse parity
     //currentPeriod =  bitChecksum ? ORICONEPULSE : ORICZEROPULSE;
     if (pass == 0) currentPeriod = bitChecksum ? ORICZEROLOWPULSE : ORICONEPULSE;
     if (pass == 1) currentPeriod = bitChecksum ? ORICZEROHIGHPULSE : ORICONEPULSE;
@@ -306,10 +306,10 @@ void TZXLoop () {
   isStopped = pauseOn;
   interrupts();
   if (copybuff == HIGH) {
-    btemppos = 0;                   // buffer has swapped, start from the beginning of the new page
+    btemppos = 0;                  // buffer has swapped, start from the beginning of the new page
     copybuff = LOW;
   }
-  if (btemppos <= buffsize) {       // keep filling until full
+  if (btemppos <= buffsize) {      // keep filling until full
     TZXProcess();                  // generate the next period to add to the buffer
     if (currentPeriod > 0) {
       noInterrupts();              // pause interrupts while we add a period to the buffer
@@ -320,17 +320,16 @@ void TZXLoop () {
   } else {
     if (currpct == 100) {
       showPercent();
-      showTime();
       currpct=111;
     }
     if (currpct < 100) {
-      if (pauseOn == 0) updateTime();
       if (bytesRead == fileSize) currpct=100;
       else currpct = (100 * bytesRead) / fileSize;
       showPercent();
       // showBytesRead();  // for debug only
     }
   }
+  if (pauseOn == 0) updateTime();
 }
 
 void TZXSetup () {
@@ -491,12 +490,12 @@ void TZXProcess () {
     } else {
       chunkID = IDCHUNKEOF;
     }
-    if (!(uefTurboMode)) {
-      zeroPulse = UEFZEROPULSE;
-      onePulse = UEFONEPULSE;
-    } else {
+    if (TurboMode) {
       zeroPulse = UEFTURBOZEROPULSE;
-      onePulse = UEFTURBOONEPULSE;
+      onePulse  = UEFTURBOONEPULSE;
+    } else {
+      zeroPulse = UEFZEROPULSE;
+      onePulse  = UEFONEPULSE;
     }
     lastByte = 0;
 
@@ -527,13 +526,12 @@ void TZXProcess () {
     case ID0110:
       if (currentBlockTask == READPARAM) {
         if (r = ReadWord(bytesRead) == 2) {
-          if (!(uefTurboMode)) {
-            pilotPulses = UEFPILOTPULSES;
-            pilotLength = UEFPILOTLENGTH;
-          } else {
-            // turbo mode
+          if (TurboMode) {
             pilotPulses = UEFTURBOPILOTPULSES;
             pilotLength = UEFTURBOPILOTLENGTH;
+          } else {
+            pilotPulses = UEFPILOTPULSES;
+            pilotLength = UEFPILOTLENGTH;
           }
         }
         currentBlockTask = PILOT;
@@ -1205,7 +1203,7 @@ void TZXProcess () {
         break;
 
       case PAUSE:
-        if (!bufCount == 0) {
+        if (bufCount) {
           currentPeriod = 32769;
           bufCount -= 1;
         } else {
@@ -1215,7 +1213,6 @@ void TZXProcess () {
         break;
       }
       break;
-
 
     case IDPAUSE:
       if (temppause > 0) {
@@ -1235,7 +1232,7 @@ void TZXProcess () {
 
     case EOF:
       // Handle end of file
-      if (!bufCount == 0) {
+      if (bufCount) {
         currentPeriod = 32767;
         bufCount -= 1;
       } else {
@@ -1245,15 +1242,15 @@ void TZXProcess () {
       break;
 
     default:
-      // id Not Recognised
+      // ID not recognized
       printtextF (PSTR ("ID? "), 0);
-      itoa (currentID, tmp, 16);
-      sendStrXY (tmp, 4, 0);
-      itoa (bytesRead, tmp, 16);
+      itoa(currentID, tmp, 16);
+      sendStrXY(tmp, 4, 0);
+      itoa(bytesRead, tmp, 16);
       strcat_P (tmp, PSTR (" - L: "));
       printtext (tmp, 1);
-      itoa (loopCount, tmp, 10);
-      sendStrXY (tmp, 10, 1);
+      itoa(loopCount, tmp, 10);
+      sendStrXY(tmp, 10, 1);
       delay(5000);
       stopFile();
       break;
@@ -1298,12 +1295,7 @@ void StandardBlock () {
 
   case PAUSE:
     // close block with a pause
-
-    // debug
-    // lcd.setCursor(0,1);
-    // lcd.print(blkchksum,HEX); lcd.print("ck ptr:"); lcd.print(hdrptr);
-
-    if ((currentID != TAP) && (currentID != AYO)) {             // check if we have !=AYO too
+    if ((currentID != TAP) && (currentID != AYO)) {  // check if we have !=AYO too
       temppause = pauseLength;
       currentID = IDPAUSE;
     } else {
@@ -1505,16 +1497,12 @@ void ZX8081DataBlock () {
 }
 
 void ZX80ByteWrite () {
-  if (uefTurboMode == 1) {
+  if (TurboMode) {
     currentPeriod = ZX80TURBOPULSE;
-    if (pass == 1) {
-      currentPeriod = ZX80TURBOBITGAP;
-    }
+    if (pass == 1) currentPeriod = ZX80TURBOBITGAP;
   } else {
     currentPeriod = ZX80PULSE;
-    if (pass == 1) {
-      currentPeriod = ZX80BITGAP;
-    }
+    if (pass == 1) currentPeriod = ZX80BITGAP;
   }
   if (pass == 0) {
     if (currentByte & 0x80) {     // set next period depending on value of bit 0

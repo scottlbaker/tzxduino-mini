@@ -236,7 +236,7 @@ byte UEFPASS = 0;
 byte passforZero=2;
 byte passforOne=4;
 
-byte uefTurboMode = 0;
+byte TurboMode    = 0;
 byte PauseAtStart = 0;
 byte FlipPolarity = 0;
 byte ID15switch   = 0;

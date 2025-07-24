@@ -162,27 +162,32 @@ void showPercent() {
 
 // display elapsed time
 void showTime() {
+  unsigned int t1 = timeCount;
+  unsigned int t2 = 0;
   if (timeCount < 10) {
     setXY (15, 0);
-    sendChar ('0' + timeCount % 10);
+    sendChar ('0' + t1);
   } else if (timeCount < 100) {
     setXY (14, 0);
-    sendChar ('0' + timeCount / 10);
-    sendChar ('0' + timeCount % 10);
+    sendChar ('0' + (t1 / 10));
+    sendChar ('0' + (t1 % 10));
   } else {
     setXY (13, 0);
-    sendChar ('0' + timeCount / 100);
-    sendChar ('0' + timeCount / 10);
-    sendChar ('0' + timeCount % 10);
+    while (t1 >= 100) {
+      t1-=100;
+      t2++;
+    }
+    sendChar ('0' + t2);
+    sendChar ('0' + (t1 / 10));
+    sendChar ('0' + (t1 % 10));
   }
-  // Serial.println(timeCount);   // for debug
 }
 
 // update the time counter
 void updateTime() {
-  if (millis () - timeDiff2 > 1000) {   // check switch every second
+  if (millis() - timeDiff2 > 1000) {    // check switch every second
     timeCount++;                        // increment second counter
-    timeDiff2 = millis ();              // reset the millisecond count
+    timeDiff2 = millis();               // reset the millisecond count
     if (timeCount > 999) timeCount=0;   // wrap at 999 seconds
     showTime();
   }
