@@ -22,6 +22,10 @@
 //    On
 //    Off
 //
+//  Hide Dotfiles: Hide files and directories that start with a '.'
+//    On
+//    Off
+//
 //=========================================================================
 
 // Main menu selections
@@ -29,9 +33,10 @@
 #define BOOST_MENU    2
 #define PAUSE_MENU    3
 #define GREMLIN_MENU  4
+#define HIDE_MENU     5
 
 #define FIRST_MENU    BAUD_MENU
-#define LAST_MENU     GREMLIN_MENU
+#define LAST_MENU     HIDE_MENU
 
 // Baud menu selections
 #define BAUD_1        1
@@ -65,6 +70,9 @@ void menuMode() {
           break;
         case GREMLIN_MENU:
           printtextF(PSTR("Gremlin Loader"),1);
+          break;
+        case HIDE_MENU:
+          printtextF(PSTR("Hide Dotfiles"),1);
           break;
         default:
           break;
@@ -205,6 +213,27 @@ void menuMode() {
           lastbtn=true;
           updateScreen=true;
           break;
+
+        case HIDE_MENU:
+          updateScreen=true;
+          lastbtn=true;
+          while (STOP_NOT_PRESSED || lastbtn) {
+            if (updateScreen) {
+              printtextF(PSTR("Hide Dotfiles"),0);
+              printOnOff(HideDotfiles);
+              updateScreen=false;
+            }
+            if (PLAY_PRESSED && !lastbtn) {
+              if (HideDotfiles==1) HideDotfiles=0;
+              else HideDotfiles=1;
+              lastbtn=true;
+              updateScreen=true;
+            }
+            if (NO_BUTTON_PRESSED()) lastbtn=false;
+          }
+          lastbtn=true;
+          updateScreen=true;
+          break;
       }
     }
     if (NO_BUTTON_PRESSED()) lastbtn=false;
@@ -219,7 +248,7 @@ void menuMode() {
 //  bit 1: 2400               BAUD2400_BIT
 //  bit 2: 3600               BAUD3600_BIT
 //  bit 3: NA                 not used
-//  bit 4: NA                 not used
+//  bit 4: Hide Dotfiles      HIDE_BIT
 //  bit 5: Pause @ Start      PAUSE_BIT
 //  bit 6: Gremlin Loader     POLAR BIT
 //  bit 7: UEFTurbo           TURBO_BIT
@@ -227,12 +256,14 @@ void menuMode() {
 #define TURBO_BIT   0x80
 #define POLAR_BIT   0x40
 #define PAUSE_BIT   0x20
+#define HIDE_BIT    0x10
 
 void updateEEPROM() {
   byte settings = baudRate;
   if (TurboMode)    settings |= TURBO_BIT;
   if (FlipPolarity) settings |= POLAR_BIT;
   if (PauseAtStart) settings |= PAUSE_BIT;
+  if (HideDotfiles) settings |= HIDE_BIT;
   EEPROM.put(0,settings);
 }
 
@@ -245,5 +276,7 @@ void loadEEPROM() {
   else FlipPolarity = 0;
   if (settings & PAUSE_BIT) PauseAtStart = 1;
   else PauseAtStart = 0;
+  if (settings & HIDE_BIT) HideDotfiles = 1;
+  else HideDotfiles = 0;
   baudRate = settings & 0x07;
 }

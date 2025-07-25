@@ -238,6 +238,7 @@ byte passforOne=4;
 
 byte TurboMode    = 0;
 byte PauseAtStart = 0;
+byte HideDotfiles = 0;
 byte FlipPolarity = 0;
 byte ID15switch   = 0;
 byte parity       = 0;   // 0:NoParity 1:ParityOdd 2:ParityEven (default:0)

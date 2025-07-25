@@ -14,9 +14,9 @@ The TZXduini-mini firmware is a fork of the open source TZXduino firmware.
 ## Contributors
 
 * Scott L Baker
+* Craig Miles
 
 ## License
 
 See the **LICENSE** file in this repository
-
 

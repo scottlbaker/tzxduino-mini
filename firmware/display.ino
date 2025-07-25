@@ -200,11 +200,8 @@ void printStar() {
 
 // for menu -- print ON or OFF status
 void printOnOff(byte on) {
-  if (on) {
-    printtextF(PSTR("On"),1);
-  } else {
-    printtextF(PSTR("Off"),1);
-  }
+  if (on) printtextF(PSTR("On"), 1);
+  else    printtextF(PSTR("Off"),1);
 }
 
 // Print constant text to screen

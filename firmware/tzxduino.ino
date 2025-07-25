@@ -78,6 +78,8 @@ void setup() {
   timeDiff = millis();     // get current millisecond count
   getMaxFile();            // get the total number of files in the directory
   seekFile(currentFile);   // move to the first file in the directory
+  if(HideDotfiles && (fileName[0] == '.')) downFile();
+  updateDisplay();
 }
 
 // main loop
@@ -174,6 +176,8 @@ void loop(void) {
        getMaxFile();
        currentFile=1;
        seekFile(currentFile);
+       if(HideDotfiles && (fileName[0] == '.')) downFile();
+       updateDisplay();
        while (STOP_PRESSED) {
          // prevent button repeats by waiting until the button is released.
          delay(200);
@@ -240,28 +244,33 @@ void resetBrowseDelay() {
 }
 
 void upFile() {
-  // move up a file in the directory
-  currentFile--;
-  if (currentFile<1) {
-    getMaxFile();
-    currentFile = maxFile;
-  }
-  UP=1;
-  seekFile(currentFile);
+  do {
+    // move up a file in the directory
+    currentFile--;
+    if (currentFile<1) {
+      getMaxFile();
+      currentFile = maxFile;
+    }
+    UP=1;
+    seekFile(currentFile);
+  } while(HideDotfiles && (fileName[0] == '.'));
+  updateDisplay();
 }
 
 void downFile() {
-  // move down a file in the directory
-  currentFile++;
-  if (currentFile>maxFile) { currentFile=1; }
-  UP=0;
-  seekFile(currentFile);
+  do {
+    // move down a file in the directory
+    currentFile++;
+    if (currentFile>maxFile) { currentFile=1; }
+    UP=0;
+    seekFile(currentFile);
+  } while(HideDotfiles && (fileName[0] == '.'));
+  updateDisplay();
 }
 
 void seekFile(int pos) {
   // move to a set position in the directory
   // store the filename, and display the name on screen
-  char tmp[16];
   if (UP==1) {
     file.cwd()->rewind();
     for (int i=1;i<=currentFile-1;i++) {
@@ -277,13 +286,14 @@ void seekFile(int pos) {
   ayblklen = fileSize + 3;  //  add 3 file header, data byte and chksum byte to file length
   if (file.isDir() || !strcmp(sfileName, "ROOT")) { isDir=1; } else { isDir=0; }
   file.close();
-  tmp[0]='\0';
+}
+
+void updateDisplay() {
   if (isDir==1) {
-    strcat_P(tmp,PSTR(VERSION));
+    printtextF(PSTR(VERSION),0);
   } else {
-    strcat_P(tmp,PSTR("Select File.."));
+    printtextF(PSTR("Select File.."),0);
   }
-  printtext(tmp,0);
   scrollPos=0;
   scrollText(fileName);
 }
@@ -351,6 +361,8 @@ void changeDir() {
   getMaxFile();
   currentFile=1;
   seekFile(currentFile);
+  if(HideDotfiles && (fileName[0] == '.')) downFile();
+  updateDisplay();
 }
 
 void scrollText(char* text) {
