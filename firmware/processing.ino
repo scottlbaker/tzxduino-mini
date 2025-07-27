@@ -21,45 +21,65 @@ void clearBuffer () {
   }
 }
 
+void printID() {
+  byte x;
+  switch (currentID) {
+  case EOF:
+    printtextF (PSTR ("EOF"), 2);
+    break;
+  default:
+    printtextF (PSTR ("ID"), 2);
+    setXY (2, 2);
+    x = (currentID>>4);
+    if (x < 10) sendChar (x+48);
+    else sendChar (x+87);
+    x = currentID & 0x0f;
+    if (x < 10) sendChar (x+48);
+    else sendChar (x+87);
+    break;
+  }
+}
+
 bool checkForTap (char *filename) {
   // Check for TAP file extensions as these have no header
-  byte len = strlen (filename);
-  if (strstr_P (strlwr (filename + (len - 4)), PSTR (".tap"))) {
+  byte len = strlen(filename);
+  if (strstr_P (strlwr(filename + (len - 4)), PSTR (".tap"))) {
     return true;
   }
   return false;
 }
 
 bool checkForP (char *filename) {
-  // Check for TAP file extensions as these have no header
-  byte len = strlen (filename);
-  if (strstr_P (strlwr (filename + (len - 2)), PSTR (".p"))) {
+  // Check for P file extensions as these have no header
+  byte len = strlen(filename);
+  if (strstr_P (strlwr(filename + (len - 2)), PSTR (".p"))) {
     return true;
   }
   return false;
 }
 
 bool checkForO (char *filename) {
-  // Check for TAP file extensions as these have no header
-  byte len = strlen (filename);
-  if (strstr_P (strlwr (filename + (len - 2)), PSTR (".o"))) {
+  // Check for O file extensions as these have no header
+  byte len = strlen(filename);
+  if (strstr_P (strlwr(filename + (len - 2)), PSTR (".o"))) {
     return true;
   }
   return false;
 }
 
 bool checkForAY (char *filename) {
-  // Check for AY file extensions as these have no header
-  byte len = strlen (filename);
-  if (strstr_P (strlwr (filename + (len - 3)), PSTR (".ay"))) {
+  // check for AY File (need to create Tap header)
+  byte len = strlen(filename);
+  if (strstr_P (strlwr(filename + (len - 3)), PSTR (".ay"))) {
     return true;
   }
   return false;
 }
 
 bool checkForUEF (char *filename) {
-  byte len = strlen (filename);
-  if (strstr_P (strlwr (filename + (len - 4)), PSTR (".uef"))) {
+  // check for UEF File (need to create Tap header)
+  byte len = strlen(filename);
+  if (strstr_P (strlwr(filename + (len - 4)), PSTR (".uef"))) {
     return true;
   }
   return false;
@@ -82,11 +102,8 @@ void writeUEFData() {
       currentByte = outByte;
       bytesToRead -= 1;
       bitChecksum = 0;
-
-      // blkchksum = blkchksum ^ currentByte;  // keep calculating checksum
       if (bytesToRead == 0) {                  // check for end of data block
         lastByte = 1;
-        // bytesRead -= 1;                     // rewind a byte if we've reached the end
         if (pauseLength==0) {                  // search for next ID if there is no pause
           currentTask = PROCESSCHUNKID;
         } else {
@@ -100,7 +117,7 @@ void writeUEFData() {
     currentBit = 11;
     pass=0;
   }
-  if ((currentBit == 2) && (parity == 0))currentBit = 1; // parity N
+  if ((currentBit == 2) && (parity == 0)) currentBit = 1;
   if (currentBit == 11) {
     currentPeriod = zeroPulse;
   } else if (currentBit == 2) {
@@ -115,7 +132,6 @@ void writeUEFData() {
     }
   }
   pass+=1;      // data is played as 2 x pulses for a zero, and 4 pulses for a one when speed is 1200
-
   if (currentPeriod == zeroPulse) {
     if (pass==passforZero) {
        if ((currentBit>1) && (currentBit<11)) {
@@ -144,7 +160,7 @@ void writeUEFData() {
 }
 
 void OricDataBlock () {
-  // convert byte from file into string of pulses.  One pulse per pass
+  // convert byte from file into string of pulses
   byte r;
   if (currentBit == 0) {                    // check for byte end/first byte
     if (r = ReadByte(bytesRead) == 1) {     // read in a byte
@@ -169,11 +185,9 @@ void OricDataBlock () {
 
 void OricBitWrite () {
   if (currentBit == 11) {   //Start Bit
-    // currentPeriod = ORICZEROPULSE;
     if (pass == 0) currentPeriod = ORICZEROLOWPULSE;
     if (pass == 1) currentPeriod = ORICZEROHIGHPULSE;
   } else if (currentBit == 2) {   // inverse parity
-    //currentPeriod =  bitChecksum ? ORICONEPULSE : ORICZEROPULSE;
     if (pass == 0) currentPeriod = bitChecksum ? ORICZEROLOWPULSE : ORICONEPULSE;
     if (pass == 1) currentPeriod = bitChecksum ? ORICZEROHIGHPULSE : ORICONEPULSE;
   } else if (currentBit == 1) {
@@ -182,17 +196,15 @@ void OricBitWrite () {
     if (currentByte & 0x01) {                      // set next period depending on value of bit 0
       currentPeriod = ORICONEPULSE;
     } else {
-      // currentPeriod = ORICZEROPULSE;
       if (pass == 0) currentPeriod = ORICZEROLOWPULSE;
       if (pass == 1) currentPeriod = ORICZEROHIGHPULSE;
     }
   }
-  pass += 1;      // data is played as 2 x pulses for a zero, and 2 pulses for a one
+  pass += 1;
   if (currentPeriod == ORICONEPULSE) {
-    // must be a one pulse
     if ((currentBit > 2) && (currentBit < 11) && (pass == 2)) {
       bitChecksum ^= 1;
-      currentByte >>= 1;                                // shift along to the next bit
+      currentByte >>= 1;                           // shift along to the next bit
       currentBit -= 1;
       pass = 0;
     }
@@ -205,7 +217,6 @@ void OricBitWrite () {
       pass = 0;
     }
     if ((currentBit == 0) && (lastByte)) {
-      // currentTask = GETCHUNKID;
       bufCount = 255;
       currentBlockTask = PAUSE;
     }
@@ -213,12 +224,11 @@ void OricBitWrite () {
     // must be a zero pulse
     if (pass == 2) {
       if ((currentBit > 2) && (currentBit < 11)) {
-        currentByte >>= 1;                            // shift along to the next bit
+        currentByte >>= 1;
       }
       currentBit -= 1;
       pass = 0;
       if ((currentBit == 0) && (lastByte)) {
-        // currentTask = GETCHUNKID;
         bufCount = 255;
         currentBlockTask = PAUSE;
       }
@@ -231,7 +241,7 @@ word TickToUs (word ticks) {
 }
 
 void checkForEXT (char *filename) {
-  if (checkForTap (filename)) {                // check for Tap file (they have no header)
+  if (checkForTap(filename)) {                 // check for Tap file
     currentTask = PROCESSID;
     currentID = TAP;
     if ((readfile (1, bytesRead)) == 1) {
@@ -241,27 +251,27 @@ void checkForEXT (char *filename) {
     }
     // printtextF(PSTR("TAP Playing"),0);
   }
-  if (checkForP (filename)) {                  // check for P File (they have no header)
+  if (checkForP(filename)) {                   // check for P File
     currentTask = PROCESSID;
     currentID = ZXP;
     // printtextF(PSTR("ZX81 P Playing"),0);
   }
-  if (checkForO (filename)) {                  // check for O File (they have no header)
+  if (checkForO(filename)) {                   // check for O File
     currentTask = PROCESSID;
     currentID = ZXO;
     // printtextF(PSTR("ZX80 O Playing"),0);
   }
-  if (checkForAY (filename)) {                 // check for AY File (need to create Tap header)
+  if (checkForAY(filename)) {                  // check for AY File
     currentTask = GETAYHEADER;
     currentID = AYO;
-    AYpass = 0;                                // reset AY pass flags
-    hdrptr = HDRSTART;                         // start reading from position 1 -> 0x13 [0x00]
+    AYpass = 0;
+    hdrptr = HDRSTART;
     // printtextF(PSTR("AY Playing"),0);
   }
-  if (checkForUEF (filename)) {                // check for UEF File (need to create Tap header)
+  if (checkForUEF(filename)) {                // check for UEF File
     currentTask = GETUEFHEADER;
     currentID = UEF;
-    // printtext("UEF Playing",0);
+    // printtextF(PSTR("UEF Playing"),0);
   }
 }
 
@@ -272,27 +282,26 @@ void TZXPlay (char *filename) {
   }
   bytesRead = 0;                                // start of file
   currentTask = GETFILEHEADER;                  // first task: search for header
-  checkForEXT (filename);
+  checkForEXT(filename);
   currentBlockTask = READPARAM;                 // first block task is to read in parameters
   clearBuffer();
   isStopped = false;
   pinState = LOW;                               // always Start on a LOW output for simplicity
   bufCount = 255;                               // end of file buffer flush
   EndOfFile = false;
-  // digitalWrite(outputPin, pinState);
   if (pinState == LOW) LowWrite(PORTB, PORTB1);
   else HighWrite(PORTB, PORTB1);
   Timer1.setPeriod (1000);                      // set 1ms wait at start of a file.
 }
 
 void TZXStop () {
-  Timer1.stop();                   // stop timer
+  Timer1.stop ();
   isStopped = true;
-  file.close();                    // close file
-  bytesRead = 0;                   // reset bytes read
-  blkchksum = 0;                   // reset block chksum byte for AY loading routine
-  AYpass = 0;                      // reset AY pass flag
-  ID15switch = 0;                  // id15switch
+  file.close ();
+  bytesRead = 0;
+  blkchksum = 0;
+  AYpass = 0;
+  ID15switch = 0;
 }
 
 void TZXPause () {
@@ -361,7 +370,6 @@ void ReadAYHeader () {
   // read and check first 8 bytes for a TZX header
   char ayHeader[9];
   int i = 0;
-
   if (file.seekSet (0)) {
     i = file.read (ayHeader, 8);
     if (memcmp_P (ayHeader, AYFile, 8) != 0) {
@@ -394,7 +402,6 @@ int ReadByte (unsigned long pos) {
   // read a byte from the file, and move file position on one if successful
   byte out[1];
   int i = 0;
-
   if (file.seekSet (pos)) {
     i = file.read (out, 1);
     if (i == 1) bytesRead += 1;
@@ -440,8 +447,6 @@ int ReadDword (unsigned long pos) {
     if (i == 4) bytesRead += 4;
   }
   outLong = ((unsigned long)word (out[3], out[2]) << 16) | word (out[1], out[0]);
-  // outLong = (word(out[3],out[2]) << 16) | word(out[1],out[0]);
-  // blkchksum = blkchksum ^ out[0] ^ out[1] ^ out[2] ^ out[3];
   return i;
 }
 
@@ -476,7 +481,6 @@ void TZXProcess () {
         if (chunkID == ID0104) {
           bytesToRead -= 3;
           bytesRead += 1;
-          // grab 1 byte Parity
           if (ReadByte(bytesRead) == 1) {
             if (outByte == 'O') parity = 1;
             else if (outByte == 'E') parity = 2;
@@ -491,11 +495,11 @@ void TZXProcess () {
       chunkID = IDCHUNKEOF;
     }
     if (TurboMode) {
-      zeroPulse = UEFTURBOZEROPULSE;
-      onePulse  = UEFTURBOONEPULSE;
+      zeroPulse = TURBOZEROPULSE;
+      onePulse  = TURBOONEPULSE;
     } else {
-      zeroPulse = UEFZEROPULSE;
-      onePulse  = UEFONEPULSE;
+      zeroPulse = ZX81ZEROPULSE;
+      onePulse  = ZX81ONEPULSE;
     }
     lastByte = 0;
 
@@ -508,8 +512,8 @@ void TZXProcess () {
     UEFPASS = 0;
   }
   if (currentTask == PROCESSCHUNKID) {
-    switch (chunkID) {
 
+    switch (chunkID) {
     case ID0000:
       bytesRead += bytesToRead;
       currentTask = GETCHUNKID;
@@ -527,11 +531,11 @@ void TZXProcess () {
       if (currentBlockTask == READPARAM) {
         if (r = ReadWord(bytesRead) == 2) {
           if (TurboMode) {
-            pilotPulses = UEFTURBOPILOTPULSES;
-            pilotLength = UEFTURBOPILOTLENGTH;
+            pilotPulses = TURBOPILOTPULSES;
+            pilotLength = TURBOPILOTLENGTH;
           } else {
-            pilotPulses = UEFPILOTPULSES;
-            pilotLength = UEFPILOTLENGTH;
+            pilotPulses = ZX81PILOTPULSES;
+            pilotLength = ZX81PILOTLENGTH;
           }
         }
         currentBlockTask = PILOT;
@@ -543,8 +547,8 @@ void TZXProcess () {
     case ID0111:
       if (currentBlockTask == READPARAM) {
         if (r = ReadWord(bytesRead) == 2) {
-          pilotPulses = UEFPILOTPULSES;       // for TURBOBAUD1500 is outWord<<2
-          pilotLength = UEFPILOTLENGTH;
+          pilotPulses = ZX81PILOTPULSES;
+          pilotLength = ZX81PILOTLENGTH;
         }
         currentBlockTask = PILOT;
         UEFPASS += 1;
@@ -586,7 +590,7 @@ void TZXProcess () {
 
     case ID0114:
       if (r = ReadWord(bytesRead) == 2) {
-        pilotPulses = UEFPILOTPULSES;
+        pilotPulses = ZX81PILOTPULSES;
         bytesRead -= 2;
       }
       UEFCarrierToneBlock();
@@ -655,7 +659,10 @@ void TZXProcess () {
     currentBlockTask = READPARAM;
   }
   if (currentTask == PROCESSID) {
-    // ID Processing
+    if (currentID != lastID) {
+      printID();
+      lastID = currentID;
+    }
     switch (currentID) {
 
     case ID10:
@@ -739,7 +746,6 @@ void TZXProcess () {
         }
         if (r = ReadWord(bytesRead) == 2) {
           pilotPulses = outWord;
-          // DebugBlock("Pilot Pulses", pilotPulses);
         }
         currentBlockTask = PILOT;
       } else {
@@ -827,7 +833,7 @@ void TZXProcess () {
         break;
 
       case DATA:
-        ZX8081DataBlock();
+        ZX81DataBlock();
         break;
       }
       break;
@@ -1027,7 +1033,7 @@ void TZXProcess () {
         break;
 
       case DATA:
-        ZX8081DataBlock();
+        ZX81DataBlock();
         break;
       }
       break;
@@ -1040,7 +1046,7 @@ void TZXProcess () {
         break;
 
       case DATA:
-        ZX8081DataBlock();
+        ZX81DataBlock();
         break;
       }
       break;
@@ -1071,13 +1077,13 @@ void TZXProcess () {
         sync2Length = SYNCSECOND;
         zeroPulse = ZEROPULSE;
         onePulse = ONEPULSE;
-        currentBlockTask = PILOT;               // now send pilot, SYNC1, SYNC2 and DATA (writeheader() from String Vector on 1st pass then writeData() on second)
+        currentBlockTask = PILOT;               // now send pilot, SYNC1, SYNC2 and DATA
         if (hdrptr == HDRSTART) AYpass = 1;     // set AY TAP data read flag only if first run
         if (AYpass == 2) {                      // if we have already sent TAP header
           blkchksum = 0;
           bytesRead = 0;
-          bytesToRead = ayblklen + 2;       // set length of file to be read plus data byte and CHKSUM (and 2 block LEN bytes)
-          AYpass = 5;                       // reset flag to read from file and output header 0xFF byte and end chksum
+          bytesToRead = ayblklen + 2;       // set length to read plus data byte and CHKSUM
+          AYpass = 5;                       // reset flag to read from file and output header
         }
         usedBitsInLastByte = 8;
         break;
@@ -1183,7 +1189,8 @@ void TZXProcess () {
             lastByte = 0;
             bufCount--;
           } else {
-            bufCount = 100; lastByte = 0;
+            bufCount = 100;
+            lastByte = 0;
             currentBlockTask = GAP;
           }
         }
@@ -1431,8 +1438,7 @@ void writeSampleData () {
     }
     pass = 0;
   }
-  if bitRead (currentPeriod, 14) {
-    // bitWrite(currentPeriod,13,currentByte&0x80);
+  if (bitRead (currentPeriod, 14)) {
     if (currentByte & 0x80) bitSet (currentPeriod, 13);
     pass += 2;
   } else {
@@ -1465,8 +1471,8 @@ void DirectRecording () {
 }
 
 void ZX81FilenameBlock () {
-  // output ZX81 filename data  byte r;
-  if (currentBit == 0) {                         // check for byte end/first byte
+  // output ZX81 filename
+  if (currentBit == 0) {                    // check for byte end/first byte
     currentByte = pgm_read_byte (ZX81Filename + currentChar);
     currentChar += 1;
     if (currentChar == 10) {
@@ -1476,12 +1482,11 @@ void ZX81FilenameBlock () {
     currentBit = 9;
     pass = 0;
   }
-  ZX80ByteWrite();
+  ZX81ByteWrite();
 }
 
-void ZX8081DataBlock () {
+void ZX81DataBlock () {
   byte r;
-
   if (currentBit == 0) {                   // check for byte end/first byte
     if (r = ReadByte(bytesRead) == 1) {    // read in a byte
       currentByte = outByte;
@@ -1493,16 +1498,16 @@ void ZX8081DataBlock () {
     currentBit = 9;
     pass = 0;
   }
-  ZX80ByteWrite();
+  ZX81ByteWrite();
 }
 
-void ZX80ByteWrite () {
+void ZX81ByteWrite () {
   if (TurboMode) {
-    currentPeriod = ZX80TURBOPULSE;
-    if (pass == 1) currentPeriod = ZX80TURBOBITGAP;
+    currentPeriod = TURBOPULSE;
+    if (pass == 1) currentPeriod = TURBOBITGAP;
   } else {
-    currentPeriod = ZX80PULSE;
-    if (pass == 1) currentPeriod = ZX80BITGAP;
+    currentPeriod = ZX81PULSE;
+    if (pass == 1) currentPeriod = ZX81BITGAP;
   }
   if (pass == 0) {
     if (currentByte & 0x80) {     // set next period depending on value of bit 0
@@ -1584,7 +1589,7 @@ void writeHeader () {
     if (hdrptr == 19) {             // if we've reached end of header block send checksum byte
       currentByte = blkchksum;
       AYpass = 2;                   // set flag to Stop playing from header in RAM
-      currentBlockTask = PAUSE;     // we've finished outputting the TAP header so 
+      currentBlockTask = PAUSE;     // we've finished outputting the TAP header so
       return;                       // now PAUSE and send DATA block normally from file
     }
     hdrptr += 1;                    // increase header string vector pointer
@@ -1617,14 +1622,12 @@ void writeHeader () {
 
 void wave () {
   // ISR Output routine
-  // fudgetime is used to reduce length of the next period by the time taken to process the ISR
-  // unsigned long fudgeTime = micros();
   word workingPeriod = wbuffer[pos][workingBuffer];
   byte pauseFlipBit = false;
   unsigned long newTime = 1;
   intError = false;
   if (isStopped == 0 && workingPeriod >= 1) {
-    if bitRead (workingPeriod, 15) {
+    if (bitRead (workingPeriod, 15)) {
       // if bit 15 of the current period is set we're about to run a pause
       // pauses start with a 1.5ms where the output is untouched after which the output is set LOW
       // pause block periods are stored in milliseconds not microseconds
@@ -1642,11 +1645,11 @@ void wave () {
       // if (wasPauseBlock==true && isPauseBlock==false) wasPauseBlock=false;
     }
     if (ID15switch == 1) {
-      if (bitRead (workingPeriod, 14) == 0) {
+      if (!bitRead (workingPeriod, 14)) {
         if (pinState == LOW) LowWrite(PORTB, PORTB1);
         else HighWrite(PORTB, PORTB1);
       } else {
-        if (bitRead (workingPeriod, 13) == 0) LowWrite (PORTB, PORTB1);
+        if (!bitRead (workingPeriod, 13)) LowWrite (PORTB, PORTB1);
         else {
           HighWrite (PORTB, PORTB1);
           bitClear (workingPeriod, 13);
@@ -1665,7 +1668,7 @@ void wave () {
       } else {
         pinState = HIGH;
       }
-      wbuffer[pos][workingBuffer] = workingPeriod - 1;  // reduce pause by 1ms as we've already pause for 1.5ms
+      wbuffer[pos][workingBuffer] = workingPeriod - 1;  // reduce pause by 1ms
       pauseFlipBit = false;
     } else {
       if (isPauseBlock == true) {

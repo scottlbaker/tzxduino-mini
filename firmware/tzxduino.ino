@@ -70,6 +70,7 @@ void setup() {
   sd.chdir();               // set SD to root directory
   TZXSetup();               // setup TZX specific options
 
+  clearScreen();
   printtextF(PSTR(VERSION),0);
   printtextF(PSTR(DATE),1);
   delay(1000);
@@ -304,6 +305,7 @@ void stopFile() {
     printtextF(PSTR("Stopped"),0);
     showPercent();
     showTime();
+    clearLine(2);
     start=0;
   }
 }

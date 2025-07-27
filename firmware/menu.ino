@@ -30,7 +30,7 @@
 
 // Main menu selections
 #define BAUD_MENU     1
-#define BOOST_MENU    2
+#define TURBO_MENU    2
 #define PAUSE_MENU    3
 #define GREMLIN_MENU  4
 #define HIDE_MENU     5
@@ -62,7 +62,7 @@ void menuMode() {
         case BAUD_MENU:
           printtextF(PSTR("Baud Rate"),1);
           break;
-        case BOOST_MENU:
+        case TURBO_MENU:
           printtextF(PSTR("Turbo Boost"),1);
           break;
         case PAUSE_MENU:
@@ -151,7 +151,7 @@ void menuMode() {
           updateScreen=true;
           break;
 
-        case BOOST_MENU:
+        case TURBO_MENU:
           updateScreen=true;
           lastbtn=true;
           while (STOP_NOT_PRESSED || lastbtn) {

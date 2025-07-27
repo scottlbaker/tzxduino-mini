@@ -39,10 +39,10 @@
 #define ID12                0x12    // pure tone
 #define ID13                0x13    // sequence of pulses of various lengths
 #define ID14                0x14    // pure data block
-#define ID15                0x15    // direct recording block - TBD OTLA and direct recording
+#define ID15                0x15    // direct recording block
 #define ID18                0x18    // csw recording block (NOT SUPPORTED)
 #define ID19                0x19    // generalized data block
-#define ID20                0x20    // pause (silence) ot 'Stop the tape' command
+#define ID20                0x20    // pause block
 #define ID21                0x21    // group start
 #define ID22                0x22    // group end
 #define ID23                0x23    // jump to block
@@ -121,50 +121,34 @@
 #define PILOTNUMBERH          3223
 #define PAUSELENGTH           1000
 
-// ZX81 Pulse Patterns
+// ZX81 pulse patterns
 // Zero Bit   1 0 1 0 1 0 1 GAP
 // One Bit    1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 GAP
 
-// ZX81 Standards
-#define ZX80PULSE                160
-#define ZX80TURBOPULSE           120
-#define ZX80BITGAP               1442
-#define ZX80TURBOBITGAP          500
+// ZX81 zero/one timing
+// For 1200 baud zero is 416us, one is 208us
+// For 1500 baud zero is 333us, one is 166us
+// For 1550 baud zero is 322us, one is 161us
+// For 1600 baud zero is 313us, one is 156us
 
-//  UEF stuff
-//  For 1200 baud zero is 416us, one is 208us
-//  For 1500 baud zero is 333us, one is 166us
-//  For 1550 baud zero is 322us, one is 161us
-//  For 1600 baud zero is 313us, one is 156us
+// TODO: turbo mode experimentation and testing
+// faster baud rates are probably possible
 
-#define TURBOBAUD1500
+// ZX81 non-turbo (1200 baud)
+#define ZX81PULSE               160
+#define ZX81BITGAP              1442
+#define ZX81PILOTPULSES         outWord<<2;
+#define ZX81PILOTLENGTH         208
+#define ZX81ZEROPULSE           416
+#define ZX81ONEPULSE            208
 
-//  1200 baud UEF
-#define UEFPILOTPULSES           outWord<<2;
-#define UEFPILOTLENGTH           208
-#define UEFZEROPULSE             416
-#define UEFONEPULSE              208
-
-#ifdef TURBOBAUD1500
-#define UEFTURBOPILOTPULSES      320
-#define UEFTURBOPILOTLENGTH      166
-#define UEFTURBOZEROPULSE        333
-#define UEFTURBOONEPULSE         166
-#endif
-
-#ifdef TURBOBAUD1550
-#define UEFTURBOPILOTPULSES      320
-#define UEFTURBOPILOTLENGTH      161
-#define UEFTURBOZEROPULSE        322
-#define UEFTURBOONEPULSE         161
-#endif
-
-#ifdef TURBOBAUD1600
-#define UEFTURBOPILOTPULSES      320
-#define UEFTURBOPILOTLENGTH      156
-#define UEFTURBOZEROPULSE        313
-#define UEFTURBOONEPULSE         156
-#endif
+// ZX81 turbo-mode (1500 baud)
+#define TURBOPULSE              128
+#define TURBOBITGAP             1153
+#define TURBOPILOTPULSES        320
+#define TURBOPILOTLENGTH        166
+#define TURBOZEROPULSE          333
+#define TURBOONEPULSE           166
 
 // ORIC parameters
 #define ORICZEROPULSE           416
@@ -202,6 +186,7 @@ volatile byte currentChar=0;
 
 // global variables
 byte currentID = 0;
+byte lastID = 99;
 byte currentTask = 0;
 byte currentBlockTask = 0;
 word currentPeriod=1;
