@@ -275,8 +275,28 @@ void checkForEXT (char *filename) {
   }
 }
 
+// init timer1
+void Timer1_init() {
+  TCCR1A = 0x00;
+  TCCR1B = 0x0d;           // CTC mode, prescaler 1024
+  TIMSK1 = 0x00;           // disable
+  sei();
+}
+
+// set timer1 period (64us resolution)
+void Timer1_period(unsigned long period_us) {
+  period_us >>=6;  // divide by 64
+  unsigned int ocr_value = (unsigned int)period_us - 1;
+  OCR1A = ocr_value;
+  TCNT1 = 0;
+  TIMSK1 = 0x02;
+}
+
+// stop timer1 interrupts
+#define Timer1_stop()  TIMSK1=0x00
+
 void TZXPlay (char *filename) {
-  Timer1.stop();                               // stop timer interrupt
+  Timer1_stop();                               // stop timer interrupt
   if (!file.open (filename, O_READ)) {         // open file and check for errors
     printtextF (PSTR ("Error Opening File"), 0);
   }
@@ -291,11 +311,11 @@ void TZXPlay (char *filename) {
   EndOfFile = false;
   if (pinState == LOW) LowWrite(PORTB, PORTB1);
   else HighWrite(PORTB, PORTB1);
-  Timer1.setPeriod (1000);                      // set 1ms wait at start of a file.
+  Timer1_period(1000);                          // set 1ms wait at start of a file.
 }
 
 void TZXStop () {
-  Timer1.stop ();
+  Timer1_stop ();
   isStopped = true;
   file.close ();
   bytesRead = 0;
@@ -345,9 +365,7 @@ void TZXSetup () {
   scrollTime = millis() + SCROLLWAIT;
   isStopped = true;
   pinState = LOW;
-  Timer1.initialize(100000);        // timer1 100ms pause
-  Timer1.attachInterrupt(wave);
-  Timer1.stop();                    // stop timer1
+  Timer1_init();
 }
 
 void ReadTZXHeader () {
@@ -1620,8 +1638,8 @@ void writeHeader () {
   }
 }
 
-void wave () {
-  // ISR Output routine
+ISR(TIMER1_COMPA_vect) {
+  // ISR waveform output routine
   word workingPeriod = wbuffer[pos][workingBuffer];
   byte pauseFlipBit = false;
   unsigned long newTime = 1;
@@ -1695,6 +1713,6 @@ void wave () {
   } else {
     newTime = 1000000;                         // just in case we have a 0 in the buffer
   }
-  Timer1.setPeriod (newTime + 4);              // finally set the next pulse length
+  Timer1_period(newTime + 4);                  // finally set the next pulse length
 }
 

@@ -31,7 +31,6 @@
 #include <Wire.h>
 #include <EEPROM.h>
 #include <SdFat.h>
-#include <TimerOne.h>
 #include "TZXDuino.h"
 
 // instantiate the file system
