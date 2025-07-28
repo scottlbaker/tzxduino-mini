@@ -134,7 +134,7 @@
 // TODO: turbo mode experimentation and testing
 // faster baud rates are probably possible
 
-// ZX81 non-turbo (1200 baud)
+// ZX81 non-turbo mode
 #define ZX81PULSE               160
 #define ZX81BITGAP              1442
 #define ZX81PILOTPULSES         outWord<<2;
@@ -142,9 +142,9 @@
 #define ZX81ZEROPULSE           416
 #define ZX81ONEPULSE            208
 
-// ZX81 turbo-mode (1500 baud)
+// ZX81 turbo-mode
 #define TURBOPULSE              128
-#define TURBOBITGAP             1153
+#define TURBOBITGAP             600
 #define TURBOPILOTPULSES        320
 #define TURBOPILOTLENGTH        166
 #define TURBOZEROPULSE          333

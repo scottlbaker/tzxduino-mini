@@ -275,29 +275,19 @@ void checkForEXT (char *filename) {
   }
 }
 
-// init timer1
-void Timer1_init() {
-  TCCR1A = 0x00;
-  TCCR1B = 0x0d;           // CTC mode, prescaler 1024
-  TIMSK1 = 0x00;           // disable
-  sei();
-}
-
-// set timer1 period (64us resolution)
-void Timer1_period(unsigned long period_us) {
-  period_us >>=6;  // divide by 64
-  unsigned int ocr_value = (unsigned int)period_us - 1;
-  OCR1A = ocr_value;
-  TCNT1 = 0;
-  TIMSK1 = 0x02;
+// set timer1 period
+void timer1Period(unsigned int usec) {
+  OCR1A  = usec<<1;        // load end count
+  TCNT1  = 0x00;           // clear timer
+  TIMSK1 = 0x02;           // enable timer1 interrupt
 }
 
 // stop timer1 interrupts
-#define Timer1_stop()  TIMSK1=0x00
+#define timer1Stop()  TIMSK1=0x00
 
 void TZXPlay (char *filename) {
-  Timer1_stop();                               // stop timer interrupt
-  if (!file.open (filename, O_READ)) {         // open file and check for errors
+  timer1Stop();                                 // stop timer1 interrupt
+  if (!file.open (filename, O_READ)) {
     printtextF (PSTR ("Error Opening File"), 0);
   }
   bytesRead = 0;                                // start of file
@@ -311,11 +301,11 @@ void TZXPlay (char *filename) {
   EndOfFile = false;
   if (pinState == LOW) LowWrite(PORTB, PORTB1);
   else HighWrite(PORTB, PORTB1);
-  Timer1_period(1000);                          // set 1ms wait at start of a file.
+  timer1Period(1000);                           // set 1ms wait at start of a file.
 }
 
 void TZXStop () {
-  Timer1_stop ();
+  timer1Stop ();
   isStopped = true;
   file.close ();
   bytesRead = 0;
@@ -329,21 +319,17 @@ void TZXPause () {
 }
 
 void TZXLoop () {
-  noInterrupts();                  // pause interrupts to prevent var reads and copy values out
   copybuff = morebuff;
   morebuff = LOW;
   isStopped = pauseOn;
-  interrupts();
   if (copybuff == HIGH) {
-    btemppos = 0;                  // buffer has swapped, start from the beginning of the new page
-    copybuff = LOW;
+    btemppos = 0;                  // buffer has swapped
+    copybuff = LOW;                // start from the beginning of the new page
   }
   if (btemppos <= buffsize) {      // keep filling until full
     TZXProcess();                  // generate the next period to add to the buffer
     if (currentPeriod > 0) {
-      noInterrupts();              // pause interrupts while we add a period to the buffer
       wbuffer[btemppos][workingBuffer ^ 1] = currentPeriod;
-      interrupts();
       btemppos += 1;
     }
   } else {
@@ -365,7 +351,6 @@ void TZXSetup () {
   scrollTime = millis() + SCROLLWAIT;
   isStopped = true;
   pinState = LOW;
-  Timer1_init();
 }
 
 void ReadTZXHeader () {
@@ -1642,12 +1627,13 @@ ISR(TIMER1_COMPA_vect) {
   // ISR waveform output routine
   word workingPeriod = wbuffer[pos][workingBuffer];
   byte pauseFlipBit = false;
-  unsigned long newTime = 1;
+  unsigned int newTime = 1000;
   intError = false;
   if (isStopped == 0 && workingPeriod >= 1) {
     if (bitRead (workingPeriod, 15)) {
       // if bit 15 of the current period is set we're about to run a pause
-      // pauses start with a 1.5ms where the output is untouched after which the output is set LOW
+      // pauses start with a 1.5ms where the output
+      // is untouched after which the output is set LOW
       // pause block periods are stored in milliseconds not microseconds
       isPauseBlock = true;
       bitClear (workingPeriod, 15);         // Clear pause block flag
@@ -1672,7 +1658,7 @@ ISR(TIMER1_COMPA_vect) {
           HighWrite (PORTB, PORTB1);
           bitClear (workingPeriod, 13);
         }
-        bitClear (workingPeriod, 14);         // Clear ID15 flag
+        bitClear (workingPeriod, 14);         // clear ID15 flag
         workingPeriod = TstatesperSample;
       }
     } else {
@@ -1680,7 +1666,7 @@ ISR(TIMER1_COMPA_vect) {
       else HighWrite(PORTB, PORTB1);
     }
     if (pauseFlipBit == true) {
-      newTime = 1500;                       // set 1.5ms initial pause block
+      newTime = 1500;                  // set 1.5ms initial pause block
       if (FlipPolarity == 0) {
         pinState = LOW;
       } else {
@@ -1690,16 +1676,16 @@ ISR(TIMER1_COMPA_vect) {
       pauseFlipBit = false;
     } else {
       if (isPauseBlock == true) {
-        newTime = long(workingPeriod) * 1000; // set pause length in microseconds
+        newTime = 1500;                // set pause length in microseconds
         isPauseBlock = false;
       } else {
-        newTime = workingPeriod;            // after all that, if it's not a pause block set the pulse period
+        newTime = workingPeriod;       // set the pulse period
       }
       pos += 1;
-      if (pos > buffsize) {                 // swap buffer pages if we've reached the end
+      if (pos > buffsize) {            // swap buffer pages if we've reached the end
         pos = 0;
         workingBuffer ^= 1;
-        morebuff = HIGH;                    // request more data to fill inactive page
+        morebuff = HIGH;               // request more data to fill inactive page
       }
     }
   } else if (workingPeriod <= 1 && isStopped == 0) {
@@ -1711,8 +1697,8 @@ ISR(TIMER1_COMPA_vect) {
       morebuff = HIGH;
     }
   } else {
-    newTime = 1000000;                         // just in case we have a 0 in the buffer
+    newTime = 1000;                         // just in case we have a 0 in the buffer
   }
-  Timer1_period(newTime + 4);                  // finally set the next pulse length
+  timer1Period(newTime + 4);                // finally set the next pulse length
 }
 

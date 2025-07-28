@@ -51,10 +51,19 @@ void init_pins() {
   pinMode(btnMenu,    INPUT_PULLUP);
 }
 
+// init timer1
+void init_timer1() {
+  TIMSK1 = 0x00;           // disable timer1 interrupt
+  TCCR1A = 0x00;           // CTC mode
+  TCCR1B = 0x0a;           // prescaler 8
+  OCR1A  = 0xfff0;         // load end count
+  TCNT1  = 0x00;           // clear timer
+}
+
 // initial setup
 void setup() {
   init_pins();                      // init pins
-  delay(100);                       // wait a bit
+  init_timer1();                    // init timer1
   Serial.begin(115200);             // init UART
   Wire.begin();                     // init I2C
   init_OLED();                      // init display
