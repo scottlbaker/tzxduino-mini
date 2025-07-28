@@ -497,7 +497,7 @@ void TZXProcess () {
     } else {
       chunkID = IDCHUNKEOF;
     }
-    if (TurboMode) {
+    if (settings & TURBO_BIT) {
       zeroPulse = TURBOZEROPULSE;
       onePulse  = TURBOONEPULSE;
     } else {
@@ -533,7 +533,7 @@ void TZXProcess () {
     case ID0110:
       if (currentBlockTask == READPARAM) {
         if (r = ReadWord(bytesRead) == 2) {
-          if (TurboMode) {
+          if (settings & TURBO_BIT) {
             pilotPulses = TURBOPILOTPULSES;
             pilotLength = TURBOPILOTLENGTH;
           } else {
@@ -1505,9 +1505,9 @@ void ZX81DataBlock () {
 }
 
 void ZX81ByteWrite () {
-  if (TurboMode) {
+  if (settings & TURBO_BIT) {
     currentPeriod = TURBOPULSE;
-    if (pass == 1) currentPeriod = TURBOBITGAP;
+    if (pass == 1) currentPeriod = turboBitGap;
   } else {
     currentPeriod = ZX81PULSE;
     if (pass == 1) currentPeriod = ZX81BITGAP;
@@ -1667,10 +1667,10 @@ ISR(TIMER1_COMPA_vect) {
     }
     if (pauseFlipBit == true) {
       newTime = 1500;                  // set 1.5ms initial pause block
-      if (FlipPolarity == 0) {
-        pinState = LOW;
-      } else {
+      if (settings & GREMLIN_BIT) {
         pinState = HIGH;
+      } else {
+        pinState = LOW;
       }
       wbuffer[pos][workingBuffer] = workingPeriod - 1;  // reduce pause by 1ms
       pauseFlipBit = false;

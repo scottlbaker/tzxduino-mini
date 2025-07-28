@@ -106,10 +106,25 @@
 // Buffer size
 #define buffsize              64
 
+// Main menu IDs
+#define BAUD_MENU             1
+#define TURBO_MENU            2
+#define PAUSE_MENU            4
+#define GREMLIN_MENU          8
+#define HIDE_MENU             16
+#define TURBO_BITGAP_MENU     32
+
 // Baud rate IDs
-#define BAUD1200              0x01
-#define BAUD2400              0x02
-#define BAUD3600              0x04
+#define BAUD1200              1
+#define BAUD2400              2
+#define BAUD3600              4
+
+// Settings bits
+#define TURBO_BIT             0x80
+#define GREMLIN_BIT           0x40
+#define PAUSE_BIT             0x20
+#define HIDE_BIT              0x10
+#define BAUD_BITS             0x07
 
 // Spectrum Standards
 #define PILOTLENGTH           619
@@ -185,6 +200,8 @@ volatile byte currentByte=0;
 volatile byte currentChar=0;
 
 // global variables
+byte settings = BAUD1200;
+word turboBitGap = TURBOBITGAP;
 byte currentID = 0;
 byte lastID = 99;
 byte currentTask = 0;
@@ -221,13 +238,9 @@ byte UEFPASS = 0;
 byte passforZero=2;
 byte passforOne=4;
 
-byte TurboMode    = 0;
-byte PauseAtStart = 0;
-byte HideDotfiles = 0;
-byte FlipPolarity = 0;
-byte ID15switch   = 0;
-byte parity       = 0;   // 0:NoParity 1:ParityOdd 2:ParityEven (default:0)
-byte bitChecksum  = 0;   // 0:Even 1:Odd number of one bits
+byte ID15switch    = 0;
+byte parity        = 0;  // 0:NoParity 1:ParityOdd 2:ParityEven (default:0)
+byte bitChecksum   = 0;  // 0:Even 1:Odd number of one bits
 
 byte  outByte=0;
 word  outWord=0;

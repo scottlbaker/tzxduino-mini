@@ -193,17 +193,6 @@ void updateTime() {
   }
 }
 
-// for menu -- print a '*' to indicate current selection
-void printStar() {
-  sendStr(" *");
-}
-
-// for menu -- print ON or OFF status
-void printOnOff(byte on) {
-  if (on) printtextF(PSTR("On"), 1);
-  else    printtextF(PSTR("Off"),1);
-}
-
 // Print constant text to screen
 void printtextF(const char* text, int row) {
   char tmp[17];
@@ -217,4 +206,3 @@ void printtext(char* text, int row) {
   sendStrXY("                ",0,row);
   sendStrXY(text,0,row);
 }
-

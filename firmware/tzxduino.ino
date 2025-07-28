@@ -83,11 +83,15 @@ void setup() {
   printtextF(PSTR(DATE),1);
   delay(1000);
 
-  loadEEPROM();
+  EEPROM.get(0,settings);
+  EEPROM.get(1,turboBitGap);
+  // check BitGap and default to 500 if not configured yet
+  if(turboBitGap < 1 || turboBitGap > ZX81BITGAP) turboBitGap = 500;
+  baudRate = settings & BAUD_BITS;
   timeDiff = millis();     // get current millisecond count
   getMaxFile();            // get the total number of files in the directory
   seekFile(currentFile);   // move to the first file in the directory
-  if(HideDotfiles && (fileName[0] == '.')) downFile();
+  if((settings & HIDE_BIT) && (fileName[0] == '.')) downFile();
   updateDisplay();
 }
 
@@ -118,10 +122,7 @@ void loop(void) {
 
     if (MENU_PRESSED && start==0) {
       menuMode();
-      while (MENU_PRESSED) {
-        // prevent button repeats by waiting until the button is released.
-        delay(200);
-      }
+      updateDisplay();
     }
 
     if (PLAY_PRESSED) {
@@ -185,7 +186,7 @@ void loop(void) {
        getMaxFile();
        currentFile=1;
        seekFile(currentFile);
-       if(HideDotfiles && (fileName[0] == '.')) downFile();
+       if((settings & HIDE_BIT) && (fileName[0] == '.')) downFile();
        updateDisplay();
        while (STOP_PRESSED) {
          // prevent button repeats by waiting until the button is released.
@@ -262,7 +263,7 @@ void upFile() {
     }
     UP=1;
     seekFile(currentFile);
-  } while(HideDotfiles && (fileName[0] == '.'));
+  } while((settings & HIDE_BIT) && (fileName[0] == '.'));
   updateDisplay();
 }
 
@@ -273,7 +274,7 @@ void downFile() {
     if (currentFile>maxFile) { currentFile=1; }
     UP=0;
     seekFile(currentFile);
-  } while(HideDotfiles && (fileName[0] == '.'));
+  } while((settings & HIDE_BIT) && (fileName[0] == '.'));
   updateDisplay();
 }
 
@@ -326,14 +327,14 @@ void playFile() {
     if (file.cwd()->exists(sfileName)) {
       printtextF(PSTR("Playing"),0);
       scrollPos=0;
-      if (PauseAtStart == false) pauseOn = 0;
+      if (!(settings & PAUSE_BIT)) pauseOn = 0;
       scrollText(fileName);
       currpct=0;
       timeCount=0;
       timeDiff2 = millis();         // reset millisecond count
       TZXPlay(sfileName);           // load using the short filename
       start=1;
-      if (PauseAtStart == true) {
+      if (settings & PAUSE_BIT) {
         printtextF(PSTR("Paused"),0);
         pauseOn = 1;
         TZXPause();
@@ -371,7 +372,7 @@ void changeDir() {
   getMaxFile();
   currentFile=1;
   seekFile(currentFile);
-  if(HideDotfiles && (fileName[0] == '.')) downFile();
+  if((settings & HIDE_BIT) && (fileName[0] == '.')) downFile();
   updateDisplay();
 }
 
