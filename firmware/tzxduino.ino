@@ -74,14 +74,8 @@ void setup() {
     printtextF(PSTR("No SD Card"),0);
     return;
   }
-
   sd.chdir();               // set SD to root directory
   TZXSetup();               // setup TZX specific options
-
-  clearScreen();
-  printtextF(PSTR(VERSION),0);
-  printtextF(PSTR(DATE),1);
-  delay(1000);
 
   EEPROM.get(0,settings);
   EEPROM.get(1,turboBitGap);
@@ -299,11 +293,7 @@ void seekFile(int pos) {
 }
 
 void updateDisplay() {
-  if (isDir==1) {
-    printtextF(PSTR(VERSION),0);
-  } else {
-    printtextF(PSTR("Select File.."),0);
-  }
+  printtextF(PSTR("Select File.."),0);
   scrollPos=0;
   scrollText(fileName);
 }

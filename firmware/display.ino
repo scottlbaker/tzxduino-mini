@@ -128,7 +128,11 @@ void showLogo (void) {
     for (int i=0; i<128; i++)
       SendByte (pgm_read_byte(tzx_logo+(j<<7)+i));
   }
-  delay(1500);
+  delay(1000);
+  clearScreen();
+  printtextF(PSTR(VERSION),0);
+  printtextF(PSTR(DATE),1);
+  delay(1000);
   clearScreen();
 }
 
